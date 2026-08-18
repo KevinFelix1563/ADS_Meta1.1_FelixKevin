@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox spacing="20.0" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.agendajavafx.HelloController">
+<HBox spacing="20.0" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.agendajavafx.CRUDController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>

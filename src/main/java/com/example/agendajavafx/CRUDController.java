@@ -6,7 +6,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
-public class HelloController {
+public class CRUDController {
 
     // Referencias a los elementos del panel izquierdo (Personas)
     @FXML private TableView<Persona> tablaPersonas;
