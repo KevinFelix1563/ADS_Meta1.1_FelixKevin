@@ -8,62 +8,60 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 public class CRUDController {
 
-    // Referencias a los elementos del panel izquierdo (Personas)
+    // Elementos de Personas
     @FXML private TableView<Persona> tablaPersonas;
     @FXML private TableColumn<Persona, Integer> colId;
     @FXML private TableColumn<Persona, String> colNombre;
-    @FXML private TableColumn<Persona, String> colDireccion;
-
     @FXML private TextField txtNombre;
+
+    // Elementos de Direcciones
+    @FXML private ListView<Direccion> listaDirecciones;
     @FXML private TextField txtDireccion;
 
-    // Referencias a los elementos del panel derecho (Teléfonos)
+    // Elementos de Teléfonos
     @FXML private ListView<Telefono> listaTelefonos;
     @FXML private TextField txtTelefono;
 
-    // Instancia de nuestra clase de base de datos
     private AgendaDAO dao = new AgendaDAO();
 
-    // Listas especiales de JavaFX que actualizan la interfaz automáticamente al cambiar
     private ObservableList<Persona> listaObservablePersonas;
+    private ObservableList<Direccion> listaObservableDirecciones;
     private ObservableList<Telefono> listaObservableTelefonos;
 
     @FXML
     public void initialize() {
-        // 1. Configurar de dónde sacará los datos cada columna de la tabla
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colNombre.setCellValueFactory(new PropertyValueFactory<>("nombre"));
-        colDireccion.setCellValueFactory(new PropertyValueFactory<>("direccion"));
 
-        // 2. Configurar cómo se mostrará el texto en la lista de teléfonos
+        // Configurar vista de las listas
         listaTelefonos.setCellFactory(param -> new ListCell<Telefono>() {
             @Override
             protected void updateItem(Telefono item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null || item.getTelefono() == null) {
-                    setText(null);
-                } else {
-                    setText(item.getTelefono());
-                }
+                setText((empty || item == null) ? null : item.getTelefono());
             }
         });
 
-        // 3. Crear un "escuchador" para saber cuándo haces clic en una persona de la tabla
-        tablaPersonas.getSelectionModel().selectedItemProperty().addListener((obs, viejaSeleccion, nuevaSeleccion) -> {
-            if (nuevaSeleccion != null) {
-                // Autocompletar los campos de texto
-                txtNombre.setText(nuevaSeleccion.getNombre());
-                txtDireccion.setText(nuevaSeleccion.getDireccion());
-                // Cargar los teléfonos de esa persona específica
-                cargarTelefonos(nuevaSeleccion.getId());
+        listaDirecciones.setCellFactory(param -> new ListCell<Direccion>() {
+            @Override
+            protected void updateItem(Direccion item, boolean empty) {
+                super.updateItem(item, empty);
+                setText((empty || item == null) ? null : item.getDireccionCompleta());
             }
         });
 
-        // 4. Cargar los datos de la base de datos al iniciar el programa
+        // Escuchador de selección en la tabla de personas
+        tablaPersonas.getSelectionModel().selectedItemProperty().addListener((obs, vieja, nueva) -> {
+            if (nueva != null) {
+                txtNombre.setText(nueva.getNombre());
+                cargarTelefonos(nueva.getId());
+                cargarDirecciones(nueva.getId());
+            }
+        });
+
         cargarPersonas();
     }
 
-    // --- MÉTODOS DE APOYO ---
     private void cargarPersonas() {
         listaObservablePersonas = FXCollections.observableArrayList(dao.obtenerTodasLasPersonas());
         tablaPersonas.setItems(listaObservablePersonas);
@@ -74,18 +72,17 @@ public class CRUDController {
         listaTelefonos.setItems(listaObservableTelefonos);
     }
 
-    // --- MÉTODOS DE LOS BOTONES (Personas) ---
+    private void cargarDirecciones(int personaId) {
+        listaObservableDirecciones = FXCollections.observableArrayList(dao.obtenerDireccionesPorPersona(personaId));
+        listaDirecciones.setItems(listaObservableDirecciones);
+    }
+
     @FXML
     protected void onAgregarPersona() {
-        String nombre = txtNombre.getText();
-        String direccion = txtDireccion.getText();
-
-        if (!nombre.trim().isEmpty()) {
-            Persona nuevaPersona = new Persona(nombre, direccion);
-            if (dao.agregarPersona(nuevaPersona)) {
+        if (!txtNombre.getText().trim().isEmpty()) {
+            if (dao.agregarPersona(new Persona(txtNombre.getText()))) {
                 cargarPersonas();
                 txtNombre.clear();
-                txtDireccion.clear();
             }
         }
     }
@@ -95,8 +92,6 @@ public class CRUDController {
         Persona seleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
         if (seleccionada != null) {
             seleccionada.setNombre(txtNombre.getText());
-            seleccionada.setDireccion(txtDireccion.getText());
-
             if (dao.actualizarPersona(seleccionada)) {
                 cargarPersonas();
                 tablaPersonas.refresh();
@@ -110,19 +105,17 @@ public class CRUDController {
         if (seleccionada != null) {
             if (dao.eliminarPersona(seleccionada.getId())) {
                 cargarPersonas();
-                listaTelefonos.getItems().clear(); // Limpiamos la lista visual de teléfonos
+                listaTelefonos.getItems().clear();
+                listaDirecciones.getItems().clear();
                 txtNombre.clear();
-                txtDireccion.clear();
             }
         }
     }
 
-    // --- MÉTODOS DE LOS BOTONES (Teléfonos) ---
     @FXML
     protected void onAgregarTelefono() {
         Persona seleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
         String tel = txtTelefono.getText();
-
         if (seleccionada != null && !tel.trim().isEmpty()) {
             if (dao.agregarTelefono(seleccionada.getId(), tel)) {
                 cargarTelefonos(seleccionada.getId());
@@ -133,12 +126,25 @@ public class CRUDController {
 
     @FXML
     protected void onEliminarTelefono() {
-        Telefono telSeleccionado = listaTelefonos.getSelectionModel().getSelectedItem();
-        Persona personaSeleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
+        Telefono tel = listaTelefonos.getSelectionModel().getSelectedItem();
+        Persona per = tablaPersonas.getSelectionModel().getSelectedItem();
+        if (tel != null && per != null && dao.eliminarTelefono(tel.getId())) {
+            cargarTelefonos(per.getId());
+        }
+    }
 
-        if (telSeleccionado != null && personaSeleccionada != null) {
-            if (dao.eliminarTelefono(telSeleccionado.getId())) {
-                cargarTelefonos(personaSeleccionada.getId());
+    @FXML
+    protected void onAgregarDireccion() {
+        Persona seleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
+        String dir = txtDireccion.getText();
+
+        if (seleccionada != null && !dir.trim().isEmpty()) {
+            // Este método verifica si existe, si no, la crea, y nos devuelve el ID
+            int idDireccion = dao.buscarOAgregarDireccion(dir);
+            if (idDireccion != -1) {
+                dao.vincularPersonaDireccion(seleccionada.getId(), idDireccion);
+                cargarDirecciones(seleccionada.getId());
+                txtDireccion.clear();
             }
         }
     }

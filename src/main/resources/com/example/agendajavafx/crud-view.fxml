@@ -9,23 +9,20 @@
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
 
+    <!-- Panel Izquierdo: Gestión de Personas -->
     <VBox spacing="10.0" HBox.hgrow="ALWAYS">
         <Label text="Gestión de Personas" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
 
         <TableView fx:id="tablaPersonas" VBox.vgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
-                <TableColumn fx:id="colNombre" text="Nombre" prefWidth="150"/>
-                <TableColumn fx:id="colDireccion" text="Dirección" prefWidth="200"/>
+                <TableColumn fx:id="colNombre" text="Nombre" prefWidth="200"/>
             </columns>
         </TableView>
 
         <GridPane hgap="10" vgap="10">
             <Label text="Nombre:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
             <TextField fx:id="txtNombre" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-
-            <Label text="Dirección:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-            <TextField fx:id="txtDireccion" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
         </GridPane>
 
         <HBox spacing="10">
@@ -35,8 +32,24 @@
         </HBox>
     </VBox>
 
+    <!-- Panel Central: Gestión de Direcciones -->
     <VBox spacing="10.0" prefWidth="250.0">
-        <Label text="Teléfonos del contacto" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+        <Label text="Direcciones" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+
+        <ListView fx:id="listaDirecciones" VBox.vgrow="ALWAYS"/>
+
+        <HBox spacing="10">
+            <TextField fx:id="txtDireccion" promptText="Nueva dirección" HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <HBox spacing="10">
+            <Button text="Agregar Dir." onAction="#onAgregarDireccion"/>
+        </HBox>
+    </VBox>
+
+    <!-- Panel Derecho: Gestión de Teléfonos -->
+    <VBox spacing="10.0" prefWidth="250.0">
+        <Label text="Teléfonos" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
 
         <ListView fx:id="listaTelefonos" VBox.vgrow="ALWAYS"/>
 
