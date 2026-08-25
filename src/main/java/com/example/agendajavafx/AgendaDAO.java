@@ -222,4 +222,21 @@ public class AgendaDAO {
         }
         return listaDirecciones;
     }
+
+    public boolean desenlazarDireccion(int personaId, int direccionId) {
+        String sql = "delete from Personas_Direcciones where personaId = ? and direccionId = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, personaId);
+            pstmt.setInt(2, direccionId);
+
+            int filasAfectadas = pstmt.executeUpdate();
+            return filasAfectadas > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

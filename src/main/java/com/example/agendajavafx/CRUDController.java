@@ -148,4 +148,16 @@ public class CRUDController {
             }
         }
     }
+
+    @FXML
+    protected void onEliminarDireccion() {
+        Direccion dirSeleccionada = listaDirecciones.getSelectionModel().getSelectedItem();
+        Persona personaSeleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
+
+        if (dirSeleccionada != null && personaSeleccionada != null) {
+            if (dao.desenlazarDireccion(personaSeleccionada.getId(), dirSeleccionada.getId())) {
+                cargarDirecciones(personaSeleccionada.getId()); // Recargar la lista visual
+            }
+        }
+    }
 }
