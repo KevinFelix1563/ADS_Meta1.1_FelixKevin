@@ -15,55 +15,37 @@ public class AgendaDAO {
 
     // ALTA (Insertar Persona y sus Teléfonos)
     public boolean agregarPersona(Persona persona) {
-        String sqlPersona = "INSERT INTO Personas (nombre, direccion) VALUES (?, ?)";
-        String sqlTelefono = "INSERT INTO Telefonos (personaId, telefono) VALUES (?, ?)";
+        String sqlPersona = "insert into Personas (nombre) values (?)";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmtPersona = conn.prepareStatement(sqlPersona, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Iniciar transacción
-            conn.setAutoCommit(false);
-
             pstmtPersona.setString(1, persona.getNombre());
-            pstmtPersona.setString(2, persona.getDireccion());
             pstmtPersona.executeUpdate();
 
-            // Obtener el ID generado para la persona
             try (ResultSet generatedKeys = pstmtPersona.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    int personaId = generatedKeys.getInt(1);
-                    persona.setId(personaId);
-
-                    // Insertar teléfonos asociados
-                    try (PreparedStatement pstmtTel = conn.prepareStatement(sqlTelefono)) {
-                        for (Telefono tel : persona.getTelefonos()) {
-                            pstmtTel.setInt(1, personaId);
-                            pstmtTel.setString(2, tel.getTelefono());
-                            pstmtTel.executeUpdate();
-                        }
-                    }
+                    persona.setId(generatedKeys.getInt(1));
+                    return true;
                 }
             }
-            conn.commit(); // Confirmar transacción
-            return true;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
 
     // CONSULTA (Leer todas las personas)
     public List<Persona> obtenerTodasLasPersonas() {
         List<Persona> lista = new ArrayList<>();
-        String sql = "SELECT * FROM Personas";
+        String sql = "select * from Personas";
 
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Persona p = new Persona(rs.getInt("id"), rs.getString("nombre"), rs.getString("direccion"));
-                // Aquí podrías agregar otra consulta para llenar sus teléfonos si lo necesitas en la vista
+                Persona p = new Persona(rs.getInt("id"), rs.getString("nombre"));
                 lista.add(p);
             }
         } catch (SQLException e) {
@@ -74,14 +56,13 @@ public class AgendaDAO {
 
     // MODIFICACIÓN (Actualizar Persona)
     public boolean actualizarPersona(Persona persona) {
-        String sql = "UPDATE Personas SET nombre = ?, direccion = ? WHERE id = ?";
+        String sql = "update Personas set nombre = ? where id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, persona.getNombre());
-            pstmt.setString(2, persona.getDireccion());
-            pstmt.setInt(3, persona.getId());
+            pstmt.setInt(2, persona.getId());
 
             int filasAfectadas = pstmt.executeUpdate();
             return filasAfectadas > 0;
@@ -166,5 +147,79 @@ public class AgendaDAO {
             e.printStackTrace();
         }
         return listaTelefonos;
+    }
+
+    // BUSCAR O AGREGAR DIRECCIÓN
+    public int buscarOAgregarDireccion(String direccionCompleta) {
+        String sqlBuscar = "select id from Direcciones where direccionCompleta = ?";
+        String sqlInsertar = "insert into Direcciones (direccionCompleta) values (?)";
+
+        try (Connection conn = getConnection()) {
+            // 1. Buscar si ya existe
+            try (PreparedStatement pstmtBuscar = conn.prepareStatement(sqlBuscar)) {
+                pstmtBuscar.setString(1, direccionCompleta);
+                try (ResultSet rs = pstmtBuscar.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("id"); // Retorna el ID existente
+                    }
+                }
+            }
+
+            // 2. Si no existe, insertarla
+            try (PreparedStatement pstmtInsertar = conn.prepareStatement(sqlInsertar, Statement.RETURN_GENERATED_KEYS)) {
+                pstmtInsertar.setString(1, direccionCompleta);
+                pstmtInsertar.executeUpdate();
+                try (ResultSet generatedKeys = pstmtInsertar.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        return generatedKeys.getInt(1); // Retorna el nuevo ID
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    // VINCULAR PERSONA CON DIRECCIÓN (Tabla intermedia)
+    public boolean vincularPersonaDireccion(int personaId, int direccionId) {
+        String sql = "insert into Personas_Direcciones (personaId, direccionId) values (?, ?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, personaId);
+            pstmt.setInt(2, direccionId);
+
+            int filasAfectadas = pstmt.executeUpdate();
+            return filasAfectadas > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // CONSULTAR LAS DIRECCIONES DE UNA PERSONA (Usando INNER JOIN)
+    public List<Direccion> obtenerDireccionesPorPersona(int personaId) {
+        List<Direccion> listaDirecciones = new ArrayList<>();
+        String sql = "select d.id, d.direccionCompleta from Direcciones d " +
+                "inner join Personas_Direcciones pd on d.id = pd.direccionId " +
+                "where pd.personaId = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, personaId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Direccion dir = new Direccion(rs.getInt("id"), rs.getString("direccionCompleta"));
+                    listaDirecciones.add(dir);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return listaDirecciones;
     }
 }
