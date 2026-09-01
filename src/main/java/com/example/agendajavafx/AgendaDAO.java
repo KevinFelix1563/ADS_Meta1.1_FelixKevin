@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AgendaDAO implements IAgendaDAO{
+public class AgendaDAO implements IPersonaDAO, ITelefonoDAO, IDireccionDAO{
 
     // ALTA (Insertar Persona y sus Teléfonos)
     public boolean agregarPersona(Persona persona) {

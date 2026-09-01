@@ -22,7 +22,10 @@ public class CRUDController {
     @FXML private ListView<Telefono> listaTelefonos;
     @FXML private TextField txtTelefono;
 
-    private IAgendaDAO dao = new AgendaDAO();
+    // Dependemos de abstracciones específicas, no de una general
+    private IPersonaDAO personaDao = new AgendaDAO();
+    private ITelefonoDAO telefonoDao = new AgendaDAO();
+    private IDireccionDAO direccionDao = new AgendaDAO();
 
     private ObservableList<Persona> listaObservablePersonas;
     private ObservableList<Direccion> listaObservableDirecciones;
@@ -63,24 +66,24 @@ public class CRUDController {
     }
 
     private void cargarPersonas() {
-        listaObservablePersonas = FXCollections.observableArrayList(dao.obtenerTodasLasPersonas());
+        listaObservablePersonas = FXCollections.observableArrayList(personaDao.obtenerTodasLasPersonas());
         tablaPersonas.setItems(listaObservablePersonas);
     }
 
     private void cargarTelefonos(int personaId) {
-        listaObservableTelefonos = FXCollections.observableArrayList(dao.obtenerTelefonosPorPersona(personaId));
+        listaObservableTelefonos = FXCollections.observableArrayList(telefonoDao.obtenerTelefonosPorPersona(personaId));
         listaTelefonos.setItems(listaObservableTelefonos);
     }
 
     private void cargarDirecciones(int personaId) {
-        listaObservableDirecciones = FXCollections.observableArrayList(dao.obtenerDireccionesPorPersona(personaId));
+        listaObservableDirecciones = FXCollections.observableArrayList(direccionDao.obtenerDireccionesPorPersona(personaId));
         listaDirecciones.setItems(listaObservableDirecciones);
     }
 
     @FXML
     protected void onAgregarPersona() {
         if (!txtNombre.getText().trim().isEmpty()) {
-            if (dao.agregarPersona(new Persona(txtNombre.getText()))) {
+            if (personaDao.agregarPersona(new Persona(txtNombre.getText()))) {
                 cargarPersonas();
                 txtNombre.clear();
             }
@@ -92,7 +95,7 @@ public class CRUDController {
         Persona seleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
         if (seleccionada != null) {
             seleccionada.setNombre(txtNombre.getText());
-            if (dao.actualizarPersona(seleccionada)) {
+            if (personaDao.actualizarPersona(seleccionada)) {
                 cargarPersonas();
                 tablaPersonas.refresh();
             }
@@ -103,7 +106,7 @@ public class CRUDController {
     protected void onEliminarPersona() {
         Persona seleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
         if (seleccionada != null) {
-            if (dao.eliminarPersona(seleccionada.getId())) {
+            if (personaDao.eliminarPersona(seleccionada.getId())) {
                 cargarPersonas();
                 listaTelefonos.getItems().clear();
                 listaDirecciones.getItems().clear();
@@ -117,7 +120,7 @@ public class CRUDController {
         Persona seleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
         String tel = txtTelefono.getText();
         if (seleccionada != null && !tel.trim().isEmpty()) {
-            if (dao.agregarTelefono(seleccionada.getId(), tel)) {
+            if (telefonoDao.agregarTelefono(seleccionada.getId(), tel)) {
                 cargarTelefonos(seleccionada.getId());
                 txtTelefono.clear();
             }
@@ -128,7 +131,7 @@ public class CRUDController {
     protected void onEliminarTelefono() {
         Telefono tel = listaTelefonos.getSelectionModel().getSelectedItem();
         Persona per = tablaPersonas.getSelectionModel().getSelectedItem();
-        if (tel != null && per != null && dao.eliminarTelefono(tel.getId())) {
+        if (tel != null && per != null && telefonoDao.eliminarTelefono(tel.getId())) {
             cargarTelefonos(per.getId());
         }
     }
@@ -139,10 +142,9 @@ public class CRUDController {
         String dir = txtDireccion.getText();
 
         if (seleccionada != null && !dir.trim().isEmpty()) {
-            // Este método verifica si existe, si no, la crea, y nos devuelve el ID
-            int idDireccion = dao.buscarOAgregarDireccion(dir);
+            int idDireccion = direccionDao.buscarOAgregarDireccion(dir);
             if (idDireccion != -1) {
-                dao.vincularPersonaDireccion(seleccionada.getId(), idDireccion);
+                direccionDao.vincularPersonaDireccion(seleccionada.getId(), idDireccion);
                 cargarDirecciones(seleccionada.getId());
                 txtDireccion.clear();
             }
@@ -155,8 +157,8 @@ public class CRUDController {
         Persona personaSeleccionada = tablaPersonas.getSelectionModel().getSelectedItem();
 
         if (dirSeleccionada != null && personaSeleccionada != null) {
-            if (dao.desenlazarDireccion(personaSeleccionada.getId(), dirSeleccionada.getId())) {
-                cargarDirecciones(personaSeleccionada.getId()); // Recargar la lista visual
+            if (direccionDao.desenlazarDireccion(personaSeleccionada.getId(), dirSeleccionada.getId())) {
+                cargarDirecciones(personaSeleccionada.getId());
             }
         }
     }
