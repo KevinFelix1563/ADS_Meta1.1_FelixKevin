@@ -5,19 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AgendaDAO {
-    private static final String URL = "jdbc:mariadb://localhost:3306/agenda";
-    private static final String USER = "usuario1";
-    private static final String PASSWORD = "superpassword";
-
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
-    }
 
     // ALTA (Insertar Persona y sus Teléfonos)
     public boolean agregarPersona(Persona persona) {
         String sqlPersona = "insert into Personas (nombre) values (?)";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmtPersona = conn.prepareStatement(sqlPersona, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmtPersona.setString(1, persona.getNombre());
@@ -40,7 +33,7 @@ public class AgendaDAO {
         List<Persona> lista = new ArrayList<>();
         String sql = "select * from Personas";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -58,7 +51,7 @@ public class AgendaDAO {
     public boolean actualizarPersona(Persona persona) {
         String sql = "update Personas set nombre = ? where id = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, persona.getNombre());
@@ -76,7 +69,7 @@ public class AgendaDAO {
     public boolean eliminarPersona(int id) {
         String sql = "DELETE FROM Personas WHERE id = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
@@ -92,7 +85,7 @@ public class AgendaDAO {
     public boolean agregarTelefono(int personaId, String telefono) {
         String sql = "insert into Telefonos (personaId, telefono) values (?, ?)";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, personaId);
@@ -110,7 +103,7 @@ public class AgendaDAO {
     public boolean eliminarTelefono(int telefonoId) {
         String sql = "delete from Telefonos where id = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, telefonoId);
@@ -128,7 +121,7 @@ public class AgendaDAO {
         List<Telefono> listaTelefonos = new ArrayList<>();
         String sql = "select * from Telefonos where personaId = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, personaId);
@@ -154,7 +147,7 @@ public class AgendaDAO {
         String sqlBuscar = "select id from Direcciones where direccionCompleta = ?";
         String sqlInsertar = "insert into Direcciones (direccionCompleta) values (?)";
 
-        try (Connection conn = getConnection()) {
+        try (Connection conn = ConexionBD.getConnection()) {
             // 1. Buscar si ya existe
             try (PreparedStatement pstmtBuscar = conn.prepareStatement(sqlBuscar)) {
                 pstmtBuscar.setString(1, direccionCompleta);
@@ -185,7 +178,7 @@ public class AgendaDAO {
     public boolean vincularPersonaDireccion(int personaId, int direccionId) {
         String sql = "insert into Personas_Direcciones (personaId, direccionId) values (?, ?)";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, personaId);
@@ -206,7 +199,7 @@ public class AgendaDAO {
                 "inner join Personas_Direcciones pd on d.id = pd.direccionId " +
                 "where pd.personaId = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, personaId);
@@ -226,7 +219,7 @@ public class AgendaDAO {
     public boolean desenlazarDireccion(int personaId, int direccionId) {
         String sql = "delete from Personas_Direcciones where personaId = ? and direccionId = ?";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = ConexionBD.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, personaId);
