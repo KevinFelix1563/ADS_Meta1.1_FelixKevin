@@ -22,7 +22,7 @@ public class CRUDController {
     @FXML private ListView<Telefono> listaTelefonos;
     @FXML private TextField txtTelefono;
 
-    private AgendaDAO dao = new AgendaDAO();
+    private IAgendaDAO dao = new AgendaDAO();
 
     private ObservableList<Persona> listaObservablePersonas;
     private ObservableList<Direccion> listaObservableDirecciones;
